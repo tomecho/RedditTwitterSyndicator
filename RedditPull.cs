@@ -21,11 +21,11 @@ namespace RedditTwitterSyndicator
         {
             string redditAppId = Environment.GetEnvironmentVariable("REDDIT_APP_ID");
             string redditAppSecret = Environment.GetEnvironmentVariable("REDDIT_APP_SECRET");
-            string redditUserName = Environment.GetEnvironmentVariable("REDDIT_USER_NAME");
+            string redditUserName = Environment.GetEnvironmentVariable("REDDIT_USERNAME");
             string redditPassword = Environment.GetEnvironmentVariable("REDDIT_PASSWORD");
 
-            RestClient client = new RestClient();
-            RestRequest request = new RestRequest("https://www.reddit.com/api/v1/access_token", Method.POST);
+            RestClient client = new RestClient("https://www.reddit.com/api/v1");
+            RestRequest request = new RestRequest("/access_token", Method.POST);
             request.AddHeader("User-Agent", Environment.GetEnvironmentVariable("USER_AGENT"));
             request.AddHeader("x-li-format", "json");
 

@@ -43,7 +43,7 @@ namespace RedditTwitterSyndicator
             }
 
             dynamic responseContent = JsonConvert.DeserializeObject(response.Content.ToString());
-            return responseContent["access_token"];
+            return responseContent["access_token"].Value;
         }
     }
 }

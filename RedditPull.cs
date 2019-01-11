@@ -16,8 +16,7 @@ namespace RedditTwitterSyndicator
     public static class RedditPull
     {
         [FunctionName("RedditPull")]
-        // todo disable RunOnStartup the value will be unexpected when deployed
-        public static async Task Run([TimerTrigger("0 0 23 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
+        public static async Task Run([TimerTrigger("0 0 23 * * *", RunOnStartup = false)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             string accessToken = GetAccessToken(log);

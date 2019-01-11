@@ -23,12 +23,12 @@ namespace RedditTwitterSyndicator
             List<RedditPost> redditPosts = GetTopPosts(log, accessToken);
         }
 
-        private static void WriteToTable(ILogger log, dynamic posts)
+        private static void WriteToTable(ILogger log, List<RedditPost> posts)
         {
             var storageAccount = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
             var tableClient = storageAccount.CreateCloudTableClient();
             
-            // todo write to table
+            var table = tableClient.GetTableReference("PostQueue");
         }
 
         struct RedditPost

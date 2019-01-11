@@ -7,6 +7,8 @@ public class PostQueueEntity : TableEntity
     {
         this.PartitionKey = "PostQueue";
         this.RowKey = Guid.NewGuid().ToString();
+        Title = title;
+        Url = url;
     }
 
     public string Title { get; set; }

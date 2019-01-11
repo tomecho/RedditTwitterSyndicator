@@ -9,6 +9,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace RedditTwitterSyndicator
 {
@@ -16,19 +17,26 @@ namespace RedditTwitterSyndicator
     {
         [FunctionName("RedditPull")]
         // todo disable RunOnStartup the value will be unexpected when deployed
-        public static void Run([TimerTrigger("0 0 23 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
+        public static async Task Run([TimerTrigger("0 0 23 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             string accessToken = GetAccessToken(log);
             List<RedditPost> redditPosts = GetTopPosts(log, accessToken);
+            await WriteToTable(log,redditPosts);
         }
 
-        private static void WriteToTable(ILogger log, List<RedditPost> posts)
+        private static async Task WriteToTable(ILogger log, List<RedditPost> posts)
         {
             var storageAccount = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
             var tableClient = storageAccount.CreateCloudTableClient();
-            
             var table = tableClient.GetTableReference("PostQueue");
+
+            var postEntities = posts.Select(post => new PostQueueEntity(post.Title, post.Url));
+            var batchOperations = new TableBatchOperation();
+            postEntities.Select(entity => TableOperation.Insert(entity)).ToList()
+                .ForEach(insertOperation => batchOperations.Add(insertOperation));
+            
+            await table.ExecuteBatchAsync(batchOperations);
         }
 
         struct RedditPost

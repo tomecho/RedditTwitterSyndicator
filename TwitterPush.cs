@@ -13,7 +13,7 @@ namespace RedditTwitterSyndicator
     public static class TwitterPush
     {
         [FunctionName("TwitterPush")]
-        public static async Task Run([TimerTrigger("0 40 23 * * *")]TimerInfo myTimer, ILogger log)
+        public static async Task Run([TimerTrigger("0 40 23 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             List<PostQueueEntity> posts = await ReadPostsFromTable();
@@ -25,7 +25,7 @@ namespace RedditTwitterSyndicator
             var tableClient = storageAccount.CreateCloudTableClient();
             var table = tableClient.GetTableReference("PostQueue");
 
-            var query = new TableQuery<PostQueueEntity>().Where(TableQuery.GenerateFilterCondition("Tweeted", QueryComparisons.Equal, "false"));
+            var query = new TableQuery<PostQueueEntity>().Where(TableQuery.GenerateFilterConditionForBool("Tweeted", QueryComparisons.Equal, false));
 
             TableContinuationToken continuationToken = null;
             List<PostQueueEntity> queryResults = new List<PostQueueEntity>();
@@ -39,8 +39,8 @@ namespace RedditTwitterSyndicator
             return queryResults;
         }
 
-        static async Task<bool> UpdatePostsInTable(List<PostQueueEntity> posts)
-        {
-        }
+        // static async Task<bool> UpdatePostsInTable(List<PostQueueEntity> posts)
+        // {
+        // }
     }
 }

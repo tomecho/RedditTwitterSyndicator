@@ -3,6 +3,10 @@ using Microsoft.WindowsAzure.Storage.Table;
 
 public class PostQueueEntity : TableEntity
 {
+    public PostQueueEntity() 
+    { 
+    }
+
     public PostQueueEntity(string title, string url)
     {
         this.PartitionKey = "PostQueue";

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
+using System.Linq;
 
 namespace RedditTwitterSyndicator
 {
@@ -17,6 +18,31 @@ namespace RedditTwitterSyndicator
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             List<PostQueueEntity> posts = await ReadPostsFromTable();
+        }
+
+        static SingleUserAuthorizer GetAuthorizer()
+        {
+            var auth = new SingleUserAuthorizer()
+            {
+                CredentialStore = new SingleUserInMemoryCredentialStore()
+                {
+                    ConsumerKey = Environment.GetEnvironmentVariable("TWITTER_CONSUMER_KEY"),
+                    ConsumerSecret = Environment.GetEnvironmentVariable("TWITTER_CONSUMER_SECRET"),
+                    AccessToken = Environment.GetEnvironmentVariable("TWITTER_ACCESS_TOKEN"),
+                    AccessTokenSecret = Environment.GetEnvironmentVariable("TWITTER_ACCESS_TOKEN_SECRET"),
+                }
+            };
+            return auth;
+        }
+
+        static async Task TweetPosts(List<PostQueueEntity> posts)
+        {
+            var twitterCtx = new TwitterContext(GetAuthorizer());
+            
+            var tweetTasks = posts.Select(post => new { Status = twitterCtx.TweetAsync(post.Url), Post = post });
+            await Task.WhenAll(tweetTasks.Select(tweetTask => tweetTask.Status));
+
+            tweetTasks.Select(tweetTask => tweetTask.Status.Result.)
         }
 
         static async Task<List<PostQueueEntity>> ReadPostsFromTable()

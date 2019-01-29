@@ -19,6 +19,7 @@ namespace RedditTwitterSyndicator
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             List<PostQueueEntity> posts = await ReadPostsFromTable();
             await TweetPosts(posts);
+            await UpdatePostsInTable(posts);
         }
 
         static SingleUserAuthorizer GetAuthorizer()
@@ -36,7 +37,7 @@ namespace RedditTwitterSyndicator
             return auth;
         }
 
-        static Task TweetPosts(List<PostQueueEntity> posts)
+        static async Task TweetPosts(List<PostQueueEntity> posts)
         {
             var twitterCtx = new TwitterContext(GetAuthorizer());
             
@@ -47,15 +48,20 @@ namespace RedditTwitterSyndicator
                     Post = post 
                 }
             );
-            return Task.WhenAll(tweetTasks.Select(tweetTask => tweetTask.Status));
+            await Task.WhenAll(tweetTasks.Select(tweetTask => tweetTask.Status));
+            posts.ForEach(post => post.Tweeted = true);
+        }
+
+        static CloudTable GetTable()
+        {
+            var storageAccount = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
+            var tableClient = storageAccount.CreateCloudTableClient();
+            return tableClient.GetTableReference("PostQueue");
         }
 
         static async Task<List<PostQueueEntity>> ReadPostsFromTable()
         {
-            var storageAccount = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
-            var tableClient = storageAccount.CreateCloudTableClient();
-            var table = tableClient.GetTableReference("PostQueue");
-
+            CloudTable table = GetTable();
             var query = new TableQuery<PostQueueEntity>().Where(TableQuery.GenerateFilterConditionForBool("Tweeted", QueryComparisons.Equal, false));
 
             TableContinuationToken continuationToken = null;
@@ -70,8 +76,13 @@ namespace RedditTwitterSyndicator
             return queryResults;
         }
 
-        // static async Task<bool> UpdatePostsInTable(List<PostQueueEntity> posts)
-        // {
-        // }
+        static Task UpdatePostsInTable(List<PostQueueEntity> posts)
+        {
+            CloudTable table = GetTable();
+            TableBatchOperation updateOperation = new TableBatchOperation();
+            posts.ForEach(post => updateOperation.Merge(post));
+
+            return table.ExecuteBatchAsync(updateOperation);
+        }
     }
 }

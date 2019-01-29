@@ -18,6 +18,7 @@ namespace RedditTwitterSyndicator
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             List<PostQueueEntity> posts = await ReadPostsFromTable();
+            await TweetPosts(posts);
         }
 
         static SingleUserAuthorizer GetAuthorizer()
@@ -35,14 +36,18 @@ namespace RedditTwitterSyndicator
             return auth;
         }
 
-        static async Task TweetPosts(List<PostQueueEntity> posts)
+        static Task TweetPosts(List<PostQueueEntity> posts)
         {
             var twitterCtx = new TwitterContext(GetAuthorizer());
             
-            var tweetTasks = posts.Select(post => new { Status = twitterCtx.TweetAsync(post.Url), Post = post });
-            await Task.WhenAll(tweetTasks.Select(tweetTask => tweetTask.Status));
-
-            tweetTasks.Select(tweetTask => tweetTask.Status.Result.)
+            var tweetTasks = posts.Select(post => 
+                new
+                { 
+                    Status = twitterCtx.TweetAsync(post.Url),
+                    Post = post 
+                }
+            );
+            return Task.WhenAll(tweetTasks.Select(tweetTask => tweetTask.Status));
         }
 
         static async Task<List<PostQueueEntity>> ReadPostsFromTable()

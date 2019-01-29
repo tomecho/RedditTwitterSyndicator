@@ -18,8 +18,24 @@ namespace RedditTwitterSyndicator
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             List<PostQueueEntity> posts = await ReadPostsFromTable();
-            await TweetPosts(posts);
+            SquashDuplicateTweets(posts);
+
+            await TweetPosts(posts.Where(post => !post.Tweeted).ToList());
             await UpdatePostsInTable(posts);
+        }
+
+        static void SquashDuplicateTweets(List<PostQueueEntity> posts)
+        {
+            posts
+                .GroupBy(post => post.Url)
+                .Where(postGrouping => postGrouping.Count() > 1) // duplicate groupings
+                .Select(postGrouping => postGrouping.Skip(1)) // leave the first one alone
+                .ToList()
+                .ForEach(postGrouping => 
+                    postGrouping
+                        .ToList()
+                        .ForEach(post => post.Tweeted = true) // mark as already tweeted
+                );
         }
 
         static SingleUserAuthorizer GetAuthorizer()
@@ -44,7 +60,10 @@ namespace RedditTwitterSyndicator
             var tweetTasks = posts.Select(post => 
                 new
                 { 
-                    Status = twitterCtx.TweetAsync(post.Url),
+                    // skip empty tweets
+                    Status = String.IsNullOrWhiteSpace(post.Url) 
+                        ? Task.CompletedTask
+                        : twitterCtx.TweetAsync(post.Url),
                     Post = post 
                 }
             );

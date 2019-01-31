@@ -21,6 +21,7 @@ namespace RedditTwitterSyndicator
             SquashDuplicateTweets(posts);
 
             await TweetPosts(posts.Where(post => !post.Tweeted).ToList());
+            posts.ForEach(post => post.Tweeted = true); // mark all posts as tweeted
             await UpdatePostsInTable(posts);
         }
 
@@ -53,22 +54,23 @@ namespace RedditTwitterSyndicator
             return auth;
         }
 
-        static async Task TweetPosts(List<PostQueueEntity> posts)
+        static Task TweetPosts(List<PostQueueEntity> posts)
         {
             var twitterCtx = new TwitterContext(GetAuthorizer());
             
-            var tweetTasks = posts.Select(post => 
-                new
-                { 
-                    // skip empty tweets
-                    Status = String.IsNullOrWhiteSpace(post.Url) 
-                        ? Task.CompletedTask
-                        : twitterCtx.TweetAsync(post.Url),
-                    Post = post 
-                }
+            IEnumerable<Task> tweetTasks = posts.Select(post =>
+                Task.Run(async () => {
+                    try 
+                    {
+                        await twitterCtx.TweetAsync(post.Url);
+                    }
+                    catch
+                    {
+                        await Task.CompletedTask;
+                    }
+                })
             );
-            await Task.WhenAll(tweetTasks.Select(tweetTask => tweetTask.Status));
-            posts.ForEach(post => post.Tweeted = true);
+            return Task.WhenAll(tweetTasks);
         }
 
         static CloudTable GetTable()

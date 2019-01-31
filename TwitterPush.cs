@@ -97,13 +97,26 @@ namespace RedditTwitterSyndicator
             return queryResults;
         }
 
+        const int MAX_OPERATIONS_PER_BATCH = 100;
         static Task UpdatePostsInTable(List<PostQueueEntity> posts)
         {
             CloudTable table = GetTable();
-            TableBatchOperation updateOperation = new TableBatchOperation();
-            posts.ForEach(post => updateOperation.Merge(post));
 
-            return table.ExecuteBatchAsync(updateOperation);
+            int numGroups = posts.Count() / MAX_OPERATIONS_PER_BATCH;
+            var updateBatchRequests = posts
+                .Select((post, index) => new { Post = post, Id = index })
+                .GroupBy(indexedPost => numGroups % indexedPost.Id)
+                .ToList()
+                .Select(updatableGroup => {
+                    TableBatchOperation updateOperation = new TableBatchOperation();
+                    updatableGroup
+                        .Select(indexedPost => indexedPost.Post)
+                        .ToList()
+                        .ForEach(post => updateOperation.Merge(post));
+                    return table.ExecuteBatchAsync(updateOperation);
+                });
+
+            return Task.WhenAll(updateBatchRequests);
         }
     }
 }

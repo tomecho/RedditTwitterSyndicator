@@ -14,7 +14,7 @@ namespace RedditTwitterSyndicator
     public static class TwitterPush
     {
         [FunctionName("TwitterPush")]
-        public static async Task Run([TimerTrigger("0 40 23 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
+        public static async Task Run([TimerTrigger("0 40 23 * * *", RunOnStartup = false)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             List<PostQueueEntity> posts = await ReadPostsFromTable();

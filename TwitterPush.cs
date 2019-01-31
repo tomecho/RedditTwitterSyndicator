@@ -104,7 +104,7 @@ namespace RedditTwitterSyndicator
 
             int numGroups = (int) System.Math.Ceiling(posts.Count() / (float) MAX_OPERATIONS_PER_BATCH);
             var updateBatchRequests = posts
-                .Select((post, index) => new { Post = post, Id = index + 1 })
+                .Select((post, index) => new { Post = post, Id = index })
                 .GroupBy(indexedPost => indexedPost.Id % numGroups)
                 .Select(updatableGroup => {
                     TableBatchOperation updateOperation = new TableBatchOperation();

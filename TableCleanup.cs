@@ -17,29 +17,21 @@ namespace RedditTwitterSyndicator
         public static async Task Run([TimerTrigger("0 0 1 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+            var tableWrapper = new PostTableWrapper();
+            var posts = await ReadPostsFromTable(tableWrapper);
         }
 
-        static async Task<List<PostQueueEntity>> ReadPostsFromTable()
+        static Task<List<PostQueueEntity>> ReadPostsFromTable(PostTableWrapper wrapper)
         {
-            CloudTable table = AzureTableHelpers.GetTable();
             var query = new TableQuery<PostQueueEntity>().Where(
                 TableQuery.CombineFilters(
                     TableQuery.GenerateFilterConditionForBool(nameof(PostQueueEntity.Tweeted), QueryComparisons.Equal, true),
-                    TableOperators.And,
+                    TableOperators.Or,
                     TableQuery.GenerateFilterConditionForDate(nameof(PostQueueEntity.Timestamp), QueryComparisons.LessThan, DateTime.Now.AddDays(-7))
                 )
             );
 
-            TableContinuationToken continuationToken = null;
-            List<PostQueueEntity> queryResults = new List<PostQueueEntity>();
-            do
-            {
-                var queryResult = await table.ExecuteQuerySegmentedAsync(query, continuationToken);
-                continuationToken = queryResult.ContinuationToken;
-                queryResults.AddRange(queryResult.Results);
-            } while (continuationToken != null);
-
-            return queryResults;
+            return wrapper.QueryPosts(query);
         }
     }
 }

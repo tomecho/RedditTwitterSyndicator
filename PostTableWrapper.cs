@@ -8,13 +8,13 @@ namespace RedditTwitterSyndicator
 {
     public class PostTableWrapper
     {
-        CloudTable _table;
+        public CloudTable table { get; }
         public PostTableWrapper()
         {
-            _table = GetTable();
+            table = GetTable();
         }
 
-        public CloudTable GetTable()
+        CloudTable GetTable()
         {
             var storageAccount = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
             var tableClient = storageAccount.CreateCloudTableClient();
@@ -27,7 +27,7 @@ namespace RedditTwitterSyndicator
             List<PostQueueEntity> queryResults = new List<PostQueueEntity>();
             do
             {
-                var queryResult = await _table.ExecuteQuerySegmentedAsync(query, continuationToken);
+                var queryResult = await table.ExecuteQuerySegmentedAsync(query, continuationToken);
                 continuationToken = queryResult.ContinuationToken;
                 queryResults.AddRange(queryResult.Results);
             } while (continuationToken != null);

@@ -14,14 +14,14 @@ namespace RedditTwitterSyndicator
     public static class TableCleanup
     {
         [FunctionName("TableCleanup")]
-        public static async Task Run([TimerTrigger("0 0 1 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
+        public static async void Run([TimerTrigger("0 0 1 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             var tableWrapper = new PostTableWrapper();
-            var posts = await ReadPostsFromTable(tableWrapper);
+            await ReadPostsFromTable(tableWrapper);
         }
 
-        static Task<List<PostQueueEntity>> ReadPostsFromTable(PostTableWrapper wrapper)
+        static async Task ReadPostsFromTable(PostTableWrapper wrapper)
         {
             var query = new TableQuery<PostQueueEntity>().Where(
                 TableQuery.CombineFilters(
@@ -30,8 +30,12 @@ namespace RedditTwitterSyndicator
                     TableQuery.GenerateFilterConditionForDate(nameof(PostQueueEntity.Timestamp), QueryComparisons.LessThan, DateTime.Now.AddDays(-7))
                 )
             );
+            var posts = await wrapper.QueryPosts(query);
 
-            return wrapper.QueryPosts(query);
+            TableBatchOperation batchOperation = new TableBatchOperation();
+            posts.ForEach(post => batchOperation.Delete(post));
+
+            await wrapper.table.ExecuteBatchAsync(batchOperation);
         }
     }
 }

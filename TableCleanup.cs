@@ -18,10 +18,10 @@ namespace RedditTwitterSyndicator
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             var tableWrapper = new PostTableWrapper();
-            await ReadPostsFromTable(tableWrapper);
+            await DeletePostsFromTable(tableWrapper);
         }
 
-        static async Task ReadPostsFromTable(PostTableWrapper wrapper)
+        static async Task DeletePostsFromTable(PostTableWrapper wrapper)
         {
             var query = new TableQuery<PostQueueEntity>().Where(
                 TableQuery.CombineFilters(
@@ -35,7 +35,7 @@ namespace RedditTwitterSyndicator
             TableBatchOperation batchOperation = new TableBatchOperation();
             posts.ForEach(post => batchOperation.Delete(post));
 
-            await wrapper.table.ExecuteBatchAsync(batchOperation);
+            await wrapper.ExecuteBatchOperation(batchOperation);
         }
     }
 }

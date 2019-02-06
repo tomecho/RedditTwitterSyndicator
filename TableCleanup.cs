@@ -14,7 +14,7 @@ namespace RedditTwitterSyndicator
     public static class TableCleanup
     {
         [FunctionName("TableCleanup")]
-        public static async void Run([TimerTrigger("0 0 1 * * *", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
+        public static async void Run([TimerTrigger("0 0 1 * * *", RunOnStartup = false)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             var tableWrapper = new PostTableWrapper();

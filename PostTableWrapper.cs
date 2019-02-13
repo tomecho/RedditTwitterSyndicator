@@ -7,11 +7,13 @@ using System.Linq;
 
 namespace RedditTwitterSyndicator
 {
-    public class PostTableWrapper
+    public class BigAzureTable<T> where T: TableEntity
     {
+        private string _tableName;
         public CloudTable table { get; }
-        public PostTableWrapper()
+        public BigAzureTable(string tableName)
         {
+            _tableName = tableName;
             table = GetTable();
         }
 
@@ -19,18 +21,18 @@ namespace RedditTwitterSyndicator
         {
             var storageAccount = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
             var tableClient = storageAccount.CreateCloudTableClient();
-            return tableClient.GetTableReference("PostQueue");
+            return tableClient.GetTableReference(_tableName);
         }
 
-        public async Task<List<PostQueueEntity>> QueryPosts(TableQuery<PostQueueEntity> query)
+        public async Task<List<T>> QueryPosts(TableQuery<PostQueueEntity> query)
         {
             TableContinuationToken continuationToken = null;
-            List<PostQueueEntity> queryResults = new List<PostQueueEntity>();
+            var queryResults = new List<T>();
             do
             {
                 var queryResult = await table.ExecuteQuerySegmentedAsync(query, continuationToken);
                 continuationToken = queryResult.ContinuationToken;
-                queryResults.AddRange(queryResult.Results);
+                queryResults.AddRange(queryResult.Results as List<T>);
             } while (continuationToken != null);
 
             return queryResults;

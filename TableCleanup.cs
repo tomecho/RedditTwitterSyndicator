@@ -17,11 +17,11 @@ namespace RedditTwitterSyndicator
         public static async void Run([TimerTrigger("0 0 1 * * *", RunOnStartup = false)]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-            var tableWrapper = new PostTableWrapper();
+            var tableWrapper = new BigAzureTable<PostQueueEntity>("PostQueue");
             await DeletePostsFromTable(tableWrapper);
         }
 
-        static async Task DeletePostsFromTable(PostTableWrapper wrapper)
+        static async Task DeletePostsFromTable(BigAzureTable<PostQueueEntity> wrapper)
         {
             var query = new TableQuery<PostQueueEntity>().Where(
                 TableQuery.CombineFilters(

@@ -1,3 +1,6 @@
+# Intro
+This is an application which pulls the top reddit posts and posts them to a twitter account.  It is written in c# targeting Microsoft Azure cloud services.  It uses Azure Functions to execute the code at certain intervals and it uses Azure Storage Tables to temporarily store the posts between functions.  It is highly performant and runs great in parallel because of it's disconnected nature, responsibilites are divided between the resources.
+
 # Components
 
 ## RedditPull
